@@ -20,9 +20,10 @@
   interface Props {
     setupInfo: SetupInfo;
     onComplete: () => void;
+    onSkip: () => void;
   }
 
-  let { setupInfo, onComplete }: Props = $props();
+  let { setupInfo, onComplete, onSkip }: Props = $props();
 
   type WizardStep = 'welcome' | 'llama' | 'model' | 'done';
 
@@ -219,6 +220,12 @@
         >
           Kuruluma Başla
         </button>
+        <button
+          class="w-full mt-3 py-2 px-4 text-sm text-text-secondary hover:text-text-primary transition-colors"
+          onclick={onSkip}
+        >
+          Şimdi değil, daha sonra kur
+        </button>
       </div>
 
     <!-- llama-server step -->
@@ -261,6 +268,12 @@
           >
             {setupInfo.zipExists ? 'Arşivi Aç' : 'İndir ve Kur'}
           </button>
+          <button
+            class="w-full mt-3 py-2 px-4 text-sm text-text-secondary hover:text-text-primary transition-colors"
+            onclick={onSkip}
+          >
+            Sonra Yap
+          </button>
         {/if}
       </div>
 
@@ -302,6 +315,12 @@
             onclick={handleModelSetup}
           >
             {setupInfo.modelPartialBytes > 0 ? 'Kaldığı Yerden Devam Et' : 'İndirmeye Başla'}
+          </button>
+          <button
+            class="w-full mt-3 py-2 px-4 text-sm text-text-secondary hover:text-text-primary transition-colors"
+            onclick={onSkip}
+          >
+            Sonra Yap
           </button>
         {/if}
       </div>

@@ -16,6 +16,7 @@
 
   let setupInfo = $state<any>(null);
   let loading = $state(true);
+  let wizardSkipped = $state(false);
 
   type LLMState = 'off' | 'loading' | 'ready';
   let llmState = $state<LLMState>('off');
@@ -70,7 +71,12 @@
   });
 
   async function handleSetupComplete() {
+    wizardSkipped = false;
     setupInfo = await CheckSetupStatus();
+  }
+
+  function handleSetupSkip() {
+    wizardSkipped = true;
   }
 
   function handleEditorReady(e: TipTapEditor) {
@@ -121,8 +127,8 @@
   <div class="flex items-center justify-center h-screen w-screen bg-surface">
     <div class="text-sm text-text-secondary">Yükleniyor...</div>
   </div>
-{:else if setupInfo?.status !== 'ready'}
-  <SetupWizard {setupInfo} onComplete={handleSetupComplete} />
+{:else if setupInfo?.status !== 'ready' && !wizardSkipped}
+  <SetupWizard {setupInfo} onComplete={handleSetupComplete} onSkip={handleSetupSkip} />
 {:else}
   <div class="flex flex-col h-screen w-screen">
     <header class="flex items-center justify-between px-4 py-1.5 border-b border-border bg-surface shrink-0"
@@ -132,7 +138,7 @@
         <button
           class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] transition-colors hover:bg-surface-secondary"
           onclick={() => showSettings = true}
-          title={llmState === 'ready' ? 'AI Sunucusu hazır' : llmState === 'loading' ? 'AI Sunucusu yükleniyor...' : 'AI Sunucusu kapalı — Ayarlardan başlatın'}
+          title={llmState === 'ready' ? 'AI Sunucusu hazır' : llmState === 'loading' ? 'AI Sunucusu yükleniyor...' : wizardSkipped ? 'Kurulum tamamlanmadı — Ayarlardan kuruluma devam edebilirsiniz' : 'AI Sunucusu kapalı — Ayarlardan başlatın'}
         >
           <span class="relative flex h-2.5 w-2.5">
             {#if llmState === 'loading'}

@@ -15,6 +15,7 @@ frontend/bindings/
 
 # Linux build artifacts
 build/linux/appimage/build/
+build/linux/*.desktop
 
 # Windows build artifacts
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
@@ -22,6 +23,7 @@ build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 # macOS build artifacts
 *.app
 *.dmg
+*.pkg
 
 # IDE / Editor
 .idea/
@@ -33,6 +35,8 @@ build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 # OS generated files
 .DS_Store
 .DS_Store?
+.AppleDouble
+.LSOverride
 Thumbs.db
 ehthumbs.db
 Desktop.ini
@@ -58,5 +62,19 @@ credentials.json
 *.temp
 *.bak
 
-# Docker (isteğe bağlı yerel dosyalar)
+# Docker / Podman (isteğe bağlı yerel dosyalar)
 docker-compose.override.yml
+
+# WSL config (kişisel sistem ayarı)
+.wslconfig
+
+# Cross-compile artifacts
+*.deb
+*.rpm
+*.AppImage
+*.tar.gz
+*.tar.xz
+*.zip
+
+# Go module download cache
+vendor/
