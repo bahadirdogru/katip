@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.1.0"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "0.1.0",
+			"CompanyName": "Katip",
+			"FileDescription": "Yerel AI destekli profesyonel Türkçe metin düzenleyici",
+			"LegalCopyright": "© 2026, Katip",
+			"ProductName": "Katip",
+			"Comments": "CPU üzerinde yerel LLM ile çalışan masaüstü Türkçe metin düzenleyici"
+		}
+	}
+}

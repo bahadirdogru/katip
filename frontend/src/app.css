@@ -1,0 +1,277 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-diff-insert-bg: rgba(0, 128, 0, 0.08);
+  --color-diff-insert-text: #27ae60;
+  --color-diff-delete-bg: rgba(255, 0, 0, 0.08);
+  --color-diff-delete-text: #c0392b;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #94a3b8;
+  --color-accent-blue: #2563eb;
+  --color-accent-green: #22c55e;
+  --color-accent-gray: #d1d5db;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dark body,
+body.dark {
+  --color-surface: #1a1a2e;
+  --color-surface-secondary: #16213e;
+  --color-border: #2d3748;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #718096;
+  --color-diff-insert-bg: rgba(39, 174, 96, 0.15);
+  --color-diff-delete-bg: rgba(192, 57, 43, 0.15);
+  --color-accent-gray: #4a5568;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* --- Notion-style ProseMirror Editor --- */
+
+.ProseMirror {
+  outline: none;
+  min-height: 100%;
+  line-height: 1.8;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  caret-color: var(--color-text-primary);
+}
+
+.ProseMirror p {
+  margin-bottom: 0.25rem;
+  padding: 3px 2px;
+}
+
+.ProseMirror h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-text-secondary);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* --- Track Changes: Inline Decorations --- */
+
+.diff-delete {
+  background-color: var(--color-diff-delete-bg);
+  color: var(--color-diff-delete-text);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-diff-delete-text);
+  border-radius: 2px;
+  padding: 1px 0;
+}
+
+.diff-insert {
+  background-color: var(--color-diff-insert-bg);
+  color: var(--color-diff-insert-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-diff-insert-text);
+  text-underline-offset: 2px;
+  border-radius: 2px;
+  padding: 1px 0;
+}
+
+.diff-insert-widget {
+  background-color: var(--color-diff-insert-bg);
+  color: var(--color-diff-insert-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-diff-insert-text);
+  text-underline-offset: 2px;
+  border-radius: 2px;
+  padding: 1px 0;
+}
+
+/* --- Review Panel: Notion-style --- */
+
+.review-panel-header {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.review-card {
+  position: relative;
+  padding: 12px 14px;
+  border-radius: 6px;
+  transition: background-color 150ms ease;
+  cursor: default;
+}
+
+.review-card:hover {
+  background-color: var(--color-surface-secondary);
+}
+
+.review-card-accent {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 1px;
+}
+
+.review-card-accent-pending {
+  background-color: var(--color-accent-blue);
+}
+
+.review-card-accent-accepted {
+  background-color: var(--color-accent-green);
+}
+
+.review-card-accent-rejected {
+  background-color: var(--color-accent-gray);
+}
+
+.review-card-actions {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.review-card:hover .review-card-actions {
+  opacity: 1;
+}
+
+.review-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 120ms ease;
+  font-size: 14px;
+}
+
+.review-action-btn:hover {
+  background-color: var(--color-border);
+}
+
+.review-action-btn-accept:hover {
+  color: #16a34a;
+  background-color: rgba(22, 163, 74, 0.1);
+}
+
+.review-action-btn-reject:hover {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+.review-separator {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 0 14px;
+}
+
+/* --- Spell Check --- */
+
+.spell-error {
+  text-decoration: underline wavy #e53e3e;
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+  cursor: context-menu;
+}
+
+.spell-popup {
+  position: absolute;
+  z-index: 50;
+  min-width: 160px;
+  max-width: 240px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 4px 0;
+  font-size: 0.8125rem;
+}
+
+.dark .spell-popup {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.spell-popup-section {
+  padding: 2px 0;
+}
+
+.spell-popup-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 12px;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  transition: background-color 100ms ease;
+}
+
+.spell-popup-item:hover {
+  background-color: var(--color-surface-secondary);
+}
+
+.spell-popup-action {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.spell-popup-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 3px 0;
+}
+
+.spell-popup-empty {
+  padding: 5px 12px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-style: italic;
+}

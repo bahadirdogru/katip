@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Katip
+Comment=Yerel AI destekli profesyonel Türkçe metin düzenleyici
+Exec=/usr/local/bin/katip %u
+Terminal=false
+Type=Application
+Icon=katip
+Categories=Office;WordProcessor;
+StartupWMClass=katip

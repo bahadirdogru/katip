@@ -1,0 +1,42 @@
+name: "katip"
+arch: ${GOARCH}
+platform: "linux"
+version: "0.1.0"
+section: "default"
+priority: "extra"
+maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
+description: "Yerel AI destekli profesyonel Türkçe metin düzenleyici"
+vendor: "Katip"
+homepage: "https://github.com/katip"
+license: "MIT"
+release: "1"
+
+contents:
+  - src: "./bin/katip"
+    dst: "/usr/local/bin/katip"
+  - src: "./build/appicon.png"
+    dst: "/usr/share/icons/hicolor/128x128/apps/katip.png"
+  - src: "./build/linux/katip.desktop"
+    dst: "/usr/share/applications/katip.desktop"
+
+# Default dependencies for Debian 12/Ubuntu 22.04+ with WebKit 4.1
+depends:
+  - libgtk-3-0
+  - libwebkit2gtk-4.1-0
+
+# Distribution-specific overrides for different package formats and WebKit versions
+overrides:
+  # RPM packages for RHEL/CentOS/AlmaLinux/Rocky Linux (WebKit 4.1)
+  rpm:
+    depends:
+      - gtk3
+      - webkit2gtk4.1
+  
+  # Arch Linux packages (WebKit 4.1)  
+  archlinux:
+    depends:
+      - gtk3
+      - webkit2gtk-4.1
+
+scripts:
+  postinstall: "./build/linux/nfpm/scripts/postinstall.sh"
