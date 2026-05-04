@@ -1,6 +1,6 @@
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import type { DiffItem } from '../stores/reviewStore';
+import type { DiffItem } from '../stores/reviewStore.svelte.ts';
 
 export const diffPluginKey = new PluginKey('diffDecorations');
 

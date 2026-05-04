@@ -3,11 +3,29 @@
   import { Editor } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import Placeholder from '@tiptap/extension-placeholder';
+  import Underline from '@tiptap/extension-underline';
+  import TextAlign from '@tiptap/extension-text-align';
+  import Highlight from '@tiptap/extension-highlight';
+  import TaskList from '@tiptap/extension-task-list';
+  import TaskItem from '@tiptap/extension-task-item';
+  import Link from '@tiptap/extension-link';
+  import Subscript from '@tiptap/extension-subscript';
+  import Superscript from '@tiptap/extension-superscript';
+  import Image from '@tiptap/extension-image';
+  import Table from '@tiptap/extension-table';
+  import TableRow from '@tiptap/extension-table-row';
+  import TableHeader from '@tiptap/extension-table-header';
+  import TableCell from '@tiptap/extension-table-cell';
+  import Color from '@tiptap/extension-color';
+  import TextStyle from '@tiptap/extension-text-style';
+  import CharacterCount from '@tiptap/extension-character-count';
   import { ImproveParagraph } from '../../../bindings/katip/internal/service/katipservice.js';
   import { reviewStore } from '../stores/reviewStore.svelte.ts';
+  import { documentStore } from '../stores/documentStore.svelte.ts';
   import { createDiffPlugin, diffPluginKey, buildDecorations } from '../editor/diffDecorations.ts';
   import { createSpellcheckPlugin, spellPluginKey } from '../editor/spellcheckPlugin.ts';
   import { initSpellChecker, isReady as isSpellReady } from '../editor/spellChecker.ts';
+  import { CommentMark } from '../editor/commentMark.ts';
   import SpellSuggestion from './SpellSuggestion.svelte';
 
   interface Props {
@@ -53,7 +71,7 @@
     const originalText = hoverParagraph.text;
 
     try {
-      const result = await ImproveParagraph(paragraphId, originalText);
+      const result = await ImproveParagraph(paragraphId, originalText, documentStore.plotSummary);
       if (result && result.diffs && result.diffs.length > 0) {
         const hasChanges = result.diffs.some((d: any) => d.type !== 'equal');
         if (hasChanges) {
@@ -175,6 +193,30 @@
         Placeholder.configure({
           placeholder: 'Yazmaya başlayın...',
         }),
+        Underline,
+        TextAlign.configure({
+          types: ['heading', 'paragraph'],
+        }),
+        Highlight,
+        TaskList,
+        TaskItem.configure({
+          nested: true,
+        }),
+        Link.configure({
+          openOnClick: false,
+          autolink: true,
+        }),
+        Subscript,
+        Superscript,
+        CommentMark,
+        Image,
+        Table.configure({ resizable: true }),
+        TableRow,
+        TableHeader,
+        TableCell,
+        TextStyle,
+        Color,
+        CharacterCount,
       ],
       content: `
         <h2>Katip'e Hoş Geldiniz</h2>

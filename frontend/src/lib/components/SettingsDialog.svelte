@@ -5,6 +5,7 @@
     GetModelCatalog, GetInstalledModels, DownloadModel, GetModelDownloadProgress,
     GetServerLog, ReextractLlamaServer
   } from '../../../bindings/katip/internal/service/katipservice.js';
+  import { settingsStore } from '../stores/settingsStore.svelte.ts';
 
   interface Props {
     open: boolean;
@@ -414,6 +415,35 @@
           {#if showLog}
             <pre class="mt-2 p-2 bg-gray-900 text-gray-200 text-[11px] rounded-md max-h-[200px] overflow-y-auto whitespace-pre-wrap break-all font-mono">{serverLog || 'Henüz log yok...'}</pre>
           {/if}
+        </section>
+
+        <section>
+          <h3 class="text-sm font-medium text-text-primary mb-2">Arayüz ve Görünüm</h3>
+          <div class="grid grid-cols-2 gap-3 p-3 bg-surface-secondary rounded-lg mb-4 border border-border/50">
+            <div>
+              <label class="block text-xs text-text-secondary mb-1" for="fontFamily">Yazı Tipi (Font Bölümü)</label>
+              <select id="fontFamily" 
+                class="w-full px-3 py-2 text-[13px] border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface text-text-primary"
+                value={settingsStore.fontFamily}
+                onchange={(e) => settingsStore.setFontFamily(e.currentTarget.value)}>
+                <option value="ui-sans-serif, system-ui, sans-serif">Sistem Varsayılanı (Modern Ayar)</option>
+                <option value="'Times New Roman', Times, serif">Times New Roman (Klasik Serif)</option>
+                <option value="Georgia, serif">Georgia (Okunabilir Serif)</option>
+                <option value="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas">Monospace (Kod stili)</option>
+                <option value="'Courier New', Courier, monospace">Courier New</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-text-secondary mb-1" for="fontSize">Taban Ölçekleme (Yazı Boyutu)</label>
+              <div class="flex items-center gap-2 mt-2">
+                <input id="fontSize" type="range" min="10" max="32" step="1"
+                  class="flex-1 accent-primary"
+                  value={settingsStore.fontSize}
+                  oninput={(e) => settingsStore.setFontSize(parseInt(e.currentTarget.value, 10))} />
+                <span class="text-xs font-mono w-8 text-right font-medium text-text-primary">{settingsStore.fontSize}px</span>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section>

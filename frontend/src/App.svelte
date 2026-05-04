@@ -7,11 +7,18 @@
   import SetupWizard from './lib/components/SetupWizard.svelte';
   import { CheckSetupStatus, GetLLMStatus } from '../bindings/katip/internal/service/katipservice.js';
   import { reviewStore } from './lib/stores/reviewStore.svelte.ts';
+  import { settingsStore } from './lib/stores/settingsStore.svelte.ts';
+  import { commentStore } from './lib/stores/commentStore.svelte.ts';
   import { diffPluginKey } from './lib/editor/diffDecorations.ts';
+  import CommentPanel from './lib/components/CommentPanel.svelte';
+  import SummaryPanel from './lib/components/SummaryPanel.svelte';
   import type { Editor as TipTapEditor } from '@tiptap/core';
 
   let editor: TipTapEditor | null = $state(null);
-  let showReviewPanel = $state(true);
+  
+  type RightPanelTab = 'reviews' | 'comments' | 'summary' | 'closed';
+  let activePanel = $state<RightPanelTab>('reviews');
+
   let showSettings = $state(false);
 
   let setupInfo = $state<any>(null);
@@ -152,13 +159,29 @@
         </button>
       </div>
       <div class="flex items-center gap-1">
-        <button
-          class="text-xs px-2.5 py-1 rounded transition-colors
-            {showReviewPanel ? 'text-primary bg-primary/10' : 'text-text-secondary hover:bg-surface-secondary'}"
-          onclick={() => showReviewPanel = !showReviewPanel}
-        >
-          Düzeltmeler{hasReviews ? ` (${reviewStore.reviews.length})` : ''}
-        </button>
+        <div class="flex items-center p-0.5 rounded border border-border bg-surface-secondary">
+          <button
+            class="text-xs px-2.5 py-1 rounded transition-colors {activePanel === 'reviews' ? 'bg-surface shadow text-primary font-medium' : 'text-text-secondary hover:text-text-primary'}"
+            onclick={() => activePanel = activePanel === 'reviews' ? 'closed' : 'reviews'}
+            title="AI Metin Düzeltmeleri"
+          >
+            Düzeltmeler{hasReviews ? ` (${reviewStore.reviews.length})` : ''}
+          </button>
+          <button
+            class="text-xs px-2.5 py-1 rounded transition-colors {activePanel === 'comments' ? 'bg-surface shadow text-primary font-medium' : 'text-text-secondary hover:text-text-primary'}"
+            onclick={() => activePanel = activePanel === 'comments' ? 'closed' : 'comments'}
+            title="Kullanıcı Yorumları"
+          >
+            Yorumlar{commentStore.threads.filter(t => !t.resolved).length > 0 ? ` (${commentStore.threads.filter(t => !t.resolved).length})` : ''}
+          </button>
+          <button
+            class="text-xs px-2.5 py-1 rounded transition-colors {activePanel === 'summary' ? 'bg-surface shadow text-primary font-medium' : 'text-text-secondary hover:text-text-primary'}"
+            onclick={() => activePanel = activePanel === 'summary' ? 'closed' : 'summary'}
+            title="Bağlam ve Hikaye Özeti"
+          >
+            Özet
+          </button>
+        </div>
         <button
           class="text-xs px-2 py-1 rounded text-text-secondary hover:bg-surface-secondary transition-colors"
           onclick={toggleTheme}
@@ -181,18 +204,37 @@
     {/if}
 
     <div class="flex flex-1 overflow-hidden">
-      <main class="flex-1 overflow-y-auto bg-surface">
-        <div class="max-w-3xl mx-auto px-20 py-8">
+      <main class="flex-1 overflow-y-auto bg-surface" style="font-size: {settingsStore.fontSize}px; font-family: {settingsStore.fontFamily};">
+        <div class="max-w-3xl mx-auto px-20 py-8 editor-root min-h-full">
           <Editor onReady={handleEditorReady} />
         </div>
       </main>
 
-      {#if showReviewPanel}
+      {#if editor && activePanel === 'reviews'}
         <aside class="w-72 border-l border-border bg-surface overflow-y-auto shrink-0">
           <ReviewPanel {editor} onAccept={handleAccept} onReject={handleReject} />
         </aside>
+      {:else if editor && activePanel === 'comments'}
+        <aside class="w-72 border-l border-border bg-surface overflow-hidden shrink-0">
+          <CommentPanel {editor} />
+        </aside>
+      {:else if editor && activePanel === 'summary'}
+        <aside class="w-72 border-l border-border bg-surface overflow-hidden shrink-0">
+          <SummaryPanel {editor} />
+        </aside>
       {/if}
     </div>
+
+    <!-- Kelime / Karakter Sayacı Çubuğu (Footer) -->
+    <footer class="flex items-center justify-between px-4 py-1.5 border-t border-border bg-surface text-[10px] text-text-secondary shrink-0 z-10">
+      <div class="flex items-center gap-4">
+        {#if editor}
+          <span class="font-medium tracking-wide">{editor.storage.characterCount.words()} kelime</span>
+          <span class="opacity-75">{editor.storage.characterCount.characters()} karakter</span>
+        {/if}
+      </div>
+      <div>Katip Yazım Motoru v0.0.1</div>
+    </footer>
   </div>
 
   <SettingsDialog open={showSettings} onClose={() => showSettings = false} />

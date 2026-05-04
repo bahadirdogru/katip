@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"katip/internal/diff"
+	"katip/internal/kitap"
 	"katip/internal/llm"
 )
 
@@ -117,8 +118,15 @@ func (s *KatipService) Greet(name string) string {
 	return "Merhaba " + name + "! Katip hazır."
 }
 
-func (s *KatipService) ImproveParagraph(paragraphID string, text string) (*DiffResult, error) {
-	improved, err := s.llmClient.Improve(text)
+func (s *KatipService) ImproveParagraph(paragraphID string, text string, plotSummary string) (*DiffResult, error) {
+	var finalPrompt string
+	if plotSummary != "" {
+		finalPrompt = fmt.Sprintf("BAĞLAM (TUTARLILIK REHBERİ):\n%s\n\nMETİN:\n%s", plotSummary, text)
+	} else {
+		finalPrompt = text
+	}
+
+	improved, err := s.llmClient.Improve(finalPrompt)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +159,10 @@ func (s *KatipService) ImproveParagraph(paragraphID string, text string) (*DiffR
 		Improved:    improved,
 		Diffs:       diffItems,
 	}, nil
+}
+
+func (s *KatipService) GeneratePlotSummary(fullText string) (string, error) {
+	return s.llmClient.GenerateSummary(fullText)
 }
 
 func (s *KatipService) GetLLMStatus() map[string]interface{} {
@@ -377,4 +389,12 @@ func formatChangeSummary(count int) string {
 		return "1 düzeltme önerildi."
 	}
 	return fmt.Sprintf("%d düzeltme önerildi.", count)
+}
+
+func (s *KatipService) SaveKitap(filePath string, doc kitap.Document) error {
+	return kitap.Write(&doc, filePath)
+}
+
+func (s *KatipService) LoadKitap(filePath string) (*kitap.Document, error) {
+	return kitap.Read(filePath)
 }

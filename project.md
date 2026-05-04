@@ -1,24 +1,29 @@
-# Katip - Profesyonel Türkçe Metin Düzenleyici
+# Katip - Detaylı Mimari ve Proje Planlama Dokümanı 
 
-## 1. Vizyon
+> 💡 **REFERANSLAR:** 
+> - AI Asistanlar için optimize edilmiş bağlam yönergeleri: `claude.md`
+> - Son kullanıcı özellik listesi ve geliştirici rehberi: `README.md`
 
-CPU üzerinde yerel LLM ile çalışan, Word tarzı "Track Changes" fonksiyonelliği (kelime bazlı diff, editör içi inline markup, onayla/reddet) ile Notion tarzı minimal tasarım sunan masaüstü Türkçe metin düzenleyici. Windows, macOS (Intel & Apple Silicon) ve Linux destekler. Tamamen çevrimdışı çalışır -- kullanıcı verileri bilgisayardan çıkmaz.
+## 1. Sistemin Vizyonu ve Felsefesi
+
+Katip, CPU üzerinde yerel LLM ile çalışan, Git benzeri versiyon kontrolü (satır bazlı takip) olan ve Notion tarzı minimal tasarım sunan masaüstü Türkçe metin düzenleyicisidir. Windows, macOS (Intel & Apple Silicon) ve Linux destekler. Tamamen çevrimdışı çalışır -- kullanıcı verileri bilgisayardan çıkmaz.
+
+Projenin temel felsefesi " Karmaşık takım ve yetki yönetimi " kurmak **değildir**. Tam aksine, odak noktası **bireysel yazarın ve editörün ekran başındaki performansını en üst düzeye çıkarmak** ve taraflar arasındaki işbirliğini e-posta tabanlı asenkron transferler (özel `.kitap` paketleri) üzerinden pürüzsüz hale getirmektir.
+
+Geleneksel kelime işlemcilerin hantal "Değişiklikleri İzle" özelliklerinin okuma hızını düşürmesi ve modern asenkron iş akışlarının (medya, font, meta veri taşınması) dağınık klasör yapılarına bağımlı olması sorunları, Katip mimarisi ile kökünden çözülmektedir. Sistem gücünü cihaz içi yerel LLM (llama.cpp) motorundan alır ve hiçbir veriyi internete çıkarmaz.
 
 ---
 
 ## 2. Temel Teknoloji Kararları
 
 ### A. Inference Stratejisi: llama-server Subprocess
-
 BitNet.cpp yerine **llama.cpp'nin llama-server** bileşeni kullanılır.
-
 - **Neden**: BitNet.cpp, llama.cpp'nin eski ve bakımsız bir fork'u. CGO entegrasyonu özellikle Windows'ta karmaşık ve kırılgan.
 - **Nasıl**: Go, `llama-server` binary'sini subprocess olarak başlatır. Tüm iletişim OpenAI-uyumlu HTTP API (`/v1/chat/completions`) üzerinden yapılır.
 - **Avantaj**: CGO karmaşıklığı sıfır, herhangi bir GGUF model dosyasıyla çalışır, hata ayıklama kolay.
 - **BitNet Desteği**: llama.cpp, TQ1_0/TQ2_0 ternary formatlarını native destekler. İleride Türkçe 1.58-bit model çıktığında sıfır kod değişikliğiyle çalışır.
 
 ### B. Model Stratejisi: Model-Agnostik Esnek Mimari + Yerleşik Katalog
-
 Mimari tamamen model-agnostik. Kullanıcı ayarlar panelinden herhangi bir GGUF model dosyasını seçebilir. Bunun yanında yerleşik bir model kataloğu sunulur ve modeller uygulama içinden tek tıkla HuggingFace'den indirilir (resume desteği ile).
 
 **Yerleşik Model Kataloğu:**
@@ -31,7 +36,6 @@ Mimari tamamen model-agnostik. Kullanıcı ayarlar panelinden herhangi bir GGUF 
 | `bitnet-2b-4t` | BitNet b1.58-2B-4T | ~1.1 GB | 2 GB | İngilizce | - |
 
 ### C. Cross-Platform Otomatik Kurulum Sistemi
-
 İlk açılışta Setup Wizard `os.UserConfigDir()/Katip/` dizinini tarar, eksik bileşenleri tespit eder ve adım adım yönlendirir. Daha önce indirilmiş dosyalar otomatik algılanır, config doldurulur ve wizard atlanır.
 
 **Platform bazlı yapılandırma dizini** (`os.UserConfigDir()` + `Katip/`):
@@ -50,7 +54,6 @@ Mimari tamamen model-agnostik. Kullanıcı ayarlar panelinden herhangi bir GGUF 
 - **Subprocess Yönetimi**: macOS/Linux'ta SIGTERM ile graceful shutdown, Windows'ta Process.Kill() (`signal_unix.go` / `signal_windows.go`)
 
 ### D. Akıllı Hata Tespiti
-
 llama-server subprocess çöktüğünde log analizi yapılır:
 - `"failed to allocate"` → BELLEK_YETERSIZ (RAM uyarısı + küçük model önerisi)
 - `"not a valid gguf"` → MODEL_BOZUK
@@ -71,13 +74,34 @@ llama-server subprocess çöktüğünde log analizi yapılır:
 | Diff | `sergi/go-diff` (Go, kelime bazlı) | ProseMirror Decoration (frontend inline markup) |
 | Yazım Denetimi | hunspell-wasm (WebAssembly) | tdd-ai/hunspell-tr Türkçe sözlükleri |
 | Config | JSON dosyası | `os.UserConfigDir()/Katip/config.json` |
+| Çevrimdışı Paket | `.kitap` Zip/JSON/MD Özel Formatı | Projenin tamamını e-posta transferine uygun tutan yapı |
 
 ---
 
-## 4. Uygulanan Özellikler
+## 4. Geliştirme Fazları (Epic Planları) ve Hedeflenen Mimari Eğilimler
+
+### Faz 1: "Her Şey Dahil" Offline Paket Altyapısı (`.kitap`)
+Fiziksel dosyaların (e-posta vb.) transferine dayalı okunaklı asenkron model tasarlanmıştır.
+- **Karar 1: Kapsüllenmiş Mimarisi (`.kitap`)**: İçerisinde salt metinleri deðil; yorumlar, meta veriler, eklenecek görseller (medya) ve yazarın özel fontunu barındıran sıkıştırılmış zip/paket yapısı. Tek e-postada %100 offline transfer.
+- **Karar 2: İçerik Bölümleme (Chaptering)**: Devasa kitaplarda LLM Context Window israfını önlemek için yazılar bölümlere ayrılır. Sadece aktif bölüm belleğe okutulur.
+- **Karar 3: Statik Proje Özeti Paneli (RAG Hedefi)**: Kitabın olay ve karakter özet tablosu `.kitap` içine gömülerek taşınır. Yapay zeka tüm sayfaları taramak yerine mantık hatalarını bu tablodan sezer.
+
+### Faz 2: Şeffaf İzleme ve UX (Kullanıcı Deneyimi) Temelleri
+- **Karar 4: Git Kalitesinde Versiyon Geçmişi**: Geleneksel Word Track Changes karmaşasından kurtulunmuştur. Satır/cümle tabanlı temiz "İsim-Tarih" loglama altyapısı mevcuttur. Çakışma yönetimi (Merge Conflict) şimdilik hariç tutulmuştur.
+- **Karar 5: Asenkron Yorumlar (Comments)**: Çıktılara yansımayan, sistem içi asenkron tartışma balonları.
+- **Karar 6: Melez ve Eğitici Arayüz**: Üstte minimal Toolbar bekler. Üzerine gelince Tooltip'ler (Açıklama balonları) çıkarak klavye Markdown kısayollarını öğretir. Ekran Ölçeklendirme (Zoom) ve Dark Mode eklentileri standartlaştırılmıştır.
+
+### Faz 3: LLM'in Yayınevi Kurallarına Dönüştürülmesi
+- **Karar 7: Tutarlılık Analizinde (RAG) Optimizasyonu**: Faz 1'deki "Özet Paneli" statik referans belleği olarak kullanılır. Karakterin esmerliği mavi/yeşil göz çelişkisi AI tarafından lokal olarak anında saptanır.
+- **Karar 8: `.tarz` Profil İçe/Dışa Aktarımı**: Yayınevlerinin kendi jargonu ve standart kuralları (Örn: Olanak yerine İmkân kullanma zorunluluğu) `.tarz` profil paketi olarak paylaşıma sunulur.
+- **Karar 9: Genişletilmiş Seri (Toplu) Tarama**: Bir bölüm bittiğinde "Öneri Kartları" listesi şeklinde anlatım bozukluğu ve `.tarz` kuralları ihlali tespit edilir.
+
+---
+
+## 5. Uygulanan Özellikler (Mevcut Durum)
 
 - **İlk Açılış Kurulum Sihirbazı**: Eksik bileşen tespiti, adım adım yönlendirme, otomatik algılama
-- **Word Tarzı Track Changes**: Kelime bazlı diff, editör içi inline markup (silinen kırmızı üstü çizili, eklenen yeşil altı çizili), onayla/reddet
+- **Word Tarzı Track Changes**: Kelime bazlı diff, editör içi inline markup (silinen kırmızı üstü çizili, eklenen yeşil altı çizili), onayla/reddet. *(Yakında Git-Diff'e evrilecektir)*
 - **Gece/Gündüz Modu**: Tailwind dark mode, tek tıkla tema değişimi, tercih `localStorage` ile hatırlanır
 - **Canlı Durum Işığı**: Header'da kırmızı/sarı/yeşil ışık ile AI sunucu durumu (5 sn polling)
 - **Notion Tarzı Tasarım**: Minimal header, hover-to-reveal butonlar, pastel renkler, temiz tipografi
@@ -92,10 +116,9 @@ llama-server subprocess çöktüğünde log analizi yapılır:
 
 ---
 
-## 5. Kullanıcı Deneyimi ve Onay Akışı
+## 6. Kullanıcı Deneyimi ve Onay Akışı
 
 ### AI İyileştirme Akışı
-
 1. Kullanıcı toolbar'daki mavi **AI İyileştir** butonuna veya paragraf hover butonuna tıklar
 2. Backend: `ImproveParagraph(id, text)` → llama-server'a HTTP POST (`<DÜZELT>` etiketi, temperature=0.15)
 3. Yanıt: `cleanLLMOutput()` ile etiket/önek temizlenir → `ComputeWordDiff()` ile kelime bazlı diff
@@ -105,27 +128,25 @@ llama-server subprocess çöktüğünde log analizi yapılır:
 7. **Reddet**: `clearDecorations()` + `reviewStore.rejectReview()` → orijinal korunur
 
 ### İlk Açılış Setup Wizard
-
 1. `CheckSetupStatus()`: llama-server var mı? zip var mı? model var mı? .part var mı?
 2. Config boşsa ama dosyalar mevcutsa → otomatik config doldur
 3. Status: `"ready"` → wizard atlanır | diğer → wizard başlar
 4. Adımlar: Hoşgeldiniz → llama-server kurulumu → Model indirme → Tamamlandı
 
 ### Türkçe Yazım Denetimi
-
 1. `initSpellChecker()`: hunspell-wasm + `tr_TR.aff` / `tr_TR.dic` yüklenir
 2. ProseMirror Plugin: Her doc değişikliğinde debounce (400ms) → `buildSpellDecorations()`
 3. Sağ tık → `SpellSuggestion.svelte` popup → öneri listesi veya "Sözlüğe ekle"
 
 ---
 
-## 6. Wails Binding API (KatipService - 17 Method)
+## 7. Wails Binding API (KatipService Mevcut 17 Method)
 
 | Method | Parametre | Dönüş | Açıklama |
 |--------|-----------|-------|----------|
 | `Greet(name)` | string | string | Test metodu |
 | `ImproveParagraph(id, text)` | string, string | DiffResult | Paragrafı AI ile iyileştir |
-| `GetLLMStatus()` | - | map | running, healthy, endpoint, modelPath, lastError |
+| `GetLLMStatus()` | - | map | running, healthy, endpoint, vb. |
 | `GetServerLog()` | - | string | llama-server stdout/stderr logu |
 | `GetConfig()` | - | AppConfig | Uygulama ayarları |
 | `UpdateConfig(cfg)` | AppConfig | error | Ayarları güncelle ve kaydet |
@@ -143,7 +164,7 @@ llama-server subprocess çöktüğünde log analizi yapılır:
 
 ---
 
-## 7. Proje Dosya Yapısı
+## 8. Proje Dosya Yapısı
 
 ```
 katip/
@@ -192,7 +213,7 @@ katip/
 
 ---
 
-## 8. Donanım ve Kaynak Planlaması
+## 9. Donanım ve Kaynak Planlaması
 
 | Bileşen | Kaynak Kullanımı | Strateji |
 |---------|-----------------|----------|
@@ -205,9 +226,9 @@ katip/
 
 ---
 
-## 9. Veri Depolama
+## 10. Veri Depolama
 
-Tüm veriler `os.UserConfigDir()/Katip/` altında saklanır (platform bağımsız):
+Tüm lokal model, konfigürasyon ve binary cache verileri `os.UserConfigDir()/Katip/` altında platform bağımsız saklanır:
 
 | Veri | Alt Dizin |
 |------|-----------|
@@ -216,6 +237,7 @@ Tüm veriler `os.UserConfigDir()/Katip/` altında saklanır (platform bağımsı
 | llama-server indirme arşivi | `llama-server/*.zip` |
 | GGUF model dosyaları | `models/<model>.gguf` |
 | İndirme geçici dosyaları | `models/<model>.gguf.part` |
+| `.tarz` profilleri (Gelecek Özellik) | `profiles/*.tarz` |
 
 **Platform bazlı tam yollar:**
 
@@ -227,25 +249,29 @@ Tüm veriler `os.UserConfigDir()/Katip/` altında saklanır (platform bağımsı
 
 ---
 
-## 10. Bilinen Sınırlamalar ve Gelecek Çalışmalar
+## 11. Bilinen Sınırlamalar ve Kapsam Dışı Konular
 
-### Mevcut Sınırlamalar
-- Dosya açma/kaydetme henüz yok
-- Streaming token desteği henüz yok (şu an tam yanıt bekleniyor)
-- Birden fazla paragraf eşzamanlı iyileştirme henüz desteklenmiyor
-- Sözlüğe eklenen kelimeler oturum bazlıdır (kalıcı değil)
-- `wails3 dev` bazen zamanlama sorunu yaşayabilir
+### Mevcut Durum Sınırlamaları (Henüz Kodlanmamış Özellikler)
+- Dosya açma/kaydetme henüz yok. Mevcut çalışma yapısı, ilerleyen süreçte tek bundle yapısı olan `.kitap` standardına taşınacaktır.
+- Streaming token desteği henüz yok (şu an tam yanıt bekleniyor). 
+- Birden fazla paragraf eşzamanlı iyileştirme henüz desteklenmiyor.
+- Sözlüğe eklenen kelimeler şu an oturum bazlıdır (kalıcı değildir).
+- Türkçe'ye özel native 1.58-bit model desteği eklenmesi (cıktığında entegre edilecektir).
+- `wails3 dev` bazen zamanlama sorunu yaşayabilir.
 
-### Gelecek Çalışmalar
-- Dosya açma/kaydetme/dışa aktarma
-- Streaming token desteği (kısmi yanıt gösterimi)
-- Çoklu paragraf eşzamanlı iyileştirme
-- Kalıcı kullanıcı sözlüğü
-- Türkçe'ye özel native 1.58-bit model desteği (çıktığında)
+### Yeni Eklediğimiz Mimari Yaklaşımlar (Kodlanacaklar Kısmı)
+- **`.kitap` I/O Mekanizması**: Yalnızca tekil dosya değil, font/resim dahil tüm projenin okuyup yazılabildiği yapı kodlanacaktır.
+- **RAG Motoru ve Statik Özet Kartları**: Öykü tutarlılığı için arka planda bağlam algılama algoritmaları yazılacaktır.
+- **Git Benzeri Cümle Diff Log Tespiti**: Mevcut Word "Track Changes" (Kırmızı Çizgili) algısı yerine İsim/Tarih/Satır bazlı temiz takip loglaması kodlanacaktır.
+- **Seri Tarama Modülü**: Tüm bölümün eksik noktalama ve tarz bağlamında tespit edilip "Öneri Kartları" listesi fırlatılması tasarlanmıştır.
+
+### Netleşen Kapsam Dışı Konular (İptal Edildi)
+- Dışa aktarımda InDesign eşleşmeli (IDML), gelişmiş Word (DOCX) ve hazır EPUB formatında çıktı üretimleri mevcut fazlardan çıkarılmıştır, salt Markdown hedeflenmiştir.
+- Eşzamanlı takım üyelerinin merge conflict (Çakışma Birleştirme) senaryoları mevcut planda kapsam dışıdır. Yetki ve asenkron aktarım el değişimine dayanır.
 
 ---
 
-## 11. Kritik Kütüphane ve Kaynak Linkleri
+## 12. Kritik Kütüphane ve Kaynak Linkleri
 
 1. **Inference Runtime:** [llama.cpp / llama-server](https://github.com/ggml-org/llama.cpp)
 2. **App Framework:** [Wails v3](https://v3.wails.io/)

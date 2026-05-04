@@ -1,25 +1,27 @@
 # Katip
 
-Yerel AI destekli profesyonel Turkce metin duzenleyici. Word tarzi Track Changes fonksiyonelligi ile Notion tarzi minimal tasarim.
+> 💡 **Geliştirici Notu**: Sistemin detaylı yeni '.kitap' mimarisi ve onaylanmayan (hariç tutulan) kapsam sınırları için `project.md` dosyasına, AI ajanlarına yönelik optimize bağlam kısıtlamaları için `claude.md` dosyasına bakınız.
 
-Katip tamamen cevrimdisi calisir -- verileriniz bilgisayarinizdan cikmaz.
+Yerel AI destekli profesyonel Turkce metin duzenleyici. Word tarzi izleme esnekliği ve Git kalitesinde versiyon geçmişi ile Notion tarzi minimal tasarim harmanlanarak bireysel yazar/editör odaklı üretilmiştir.
 
-Windows, macOS (Intel & Apple Silicon) ve Linux destekler.
+Katip tamamen cevrimdisi calisir -- verileriniz ve yazarların eserleri bilgisayarinizdan cikmaz. Çalışma dosyalarının (.kitap formatında) kişiler arası e-posta üzerinden taşınarak eşzamanlı hiyerarşik zorluklardan uzak, asenkron bir senkronizasyonla işletilmesi temeline dayanır.
+
+Gereksinim duyulan LLM altyapısı (llama.cpp vb.) arka planda tamamen şeffaf kontrol edilir, Windows, macOS (Intel & Apple Silicon) ve Linux destekler.
 
 ## Ozellikler
 
+- **Yeni `.kitap` Her Şey Dahil Paket Mimarisi**: Karmaşık klasör yapıları yerine; sadece metinleri değil, eklenmiş fontları, medyaları (resimler), detaylı meta verileri (kelime hedefleri vb.), versiyon tarihçesini ve onay bekleyen satıriçi yorumları (Comments) içeren tek bir ZIP bundle. Dosyayı e-posta ile attığınızda tüm donanım ve editör kurgunuz bozulmadan aktarılır.
+- **Git Kalitesinde Versiyon Geçmişi**: Geleneksel Word tarzi karmaşık "Track Changes" (Değişiklikleri İzle) mimarisi yerine, kodlamacılar için ideal olan temiz "İsim-Tarih" log tabanlı, satır/cümle düzeyinde geçmiş dökümü.
+- **AI Tutarlılık Motoru (RAG)**: AI, 400 sayfalık metni RAM'e yüklemek yerine; `.kitap` paketinin içine gömülü "Olay ve Karakter Özeti" referansını tarar. "3. bölümde sarışın olan karakter 7. bölümde esmer denildi" türündeki kurgu hatalarını saniyeler içinde zekice yakalar.
+- **Dışa/İçe Açık `.tarz` Profilleri**: Yayınevinin kurumsal jargonunu veya özel kelime filtrelerini ("olanak" değil "imkân" olacak vb.) XML profil dosyası gibi (`.tarz`) dışarıdan programa takın. Seri taramalar ile anlatım bozukluğu kontrollerinizi bu profile göre tek tıkla yapın.
 - **Ilk Acilis Kurulum Sihirbazi**: Uygulama ilk acildiginda yapilandirma dizinini tarar, eksik bilesenleri tespit eder ve adim adim yonlendirir. Zaten indirilmis dosyalari otomatik algilar, config'i doldurur ve wizard'i atlar.
-- **Word Tarzi Track Changes**: Kelime bazli diff, editor ici inline markup (silinen kirmizi ustu cizili, eklenen yesil alti cizili), onayla/reddet
-- **Gece/Gunduz Modu**: Tailwind dark mode ile tek tikla tema degisimi, tercih hatirlanir
+- **Gece/Gunduz Modu**: Tailwind dark mode ile tek tikla tema degisimi, tercih hatirlanir. Yeni sayfayı ölçeklendirme (Zoom & Font) özellikleri.
 - **Canli Durum Isigi**: Header'da kirmizi/sari/yesil isik ile AI sunucu durumu aninda gorunur
-- **Notion Tarzi Tasarim**: Minimal header, hover-to-reveal butonlar, pastel renkler, temiz tipografi
-- **AI Metin Iyilestirme**: Toolbar'daki belirgin mavi "AI Iyilestir" butonuna tiklayin veya paragraf uzerine gelin
+- **Melez Tasarim**: Word tarzı tepede her an erişilebilir öğretici (Tooltip'li kısayol öğreten) araç çubuğu (Toolbar) + Notion minimalizmi özellikleri bir arada sunulur.
 - **Turkce Yazim Denetleyicisi**: hunspell-wasm (WebAssembly) + tdd-ai/hunspell-tr sozlukleri ile cevrimdisi yazim kontrolu. Yanlis yazilan kelimeler kirmizi dalgali alt cizgi ile isaretlenir, sag tik ile oneri popup'i acilir.
 - **Akilli Hata Tespiti**: RAM yetersizligi, model hatasi gibi sorunlar belirgin uyari banner'lari ile gosterilir
-- **Zengin Metin Editoru**: Basliklar, kalin, italik, listeler, alinti bloklari
 - **Otomatik Kurulum**: llama-server ve GGUF modelleri uygulama icinden tek tikla indirin
 - **Model Secimi**: Onceden tanimli Turkce model katalogundan secim yapin veya kendi GGUF modelinizi kullanin. Varsayilan model (Turkcell-LLM-7b-v1) badge ile isaretlidir.
-- **Ozellestirilebilir AI Prompt**: Sistem prompt'unu ayarlar panelinden duzenleyin
 - **Cross-Platform**: Windows, macOS (Intel & Apple Silicon) ve Linux uzerinde calisir
 
 ## Gereksinimler
@@ -103,9 +105,9 @@ Uygulama ilk acildiginda:
 Sonraki kullanimlarda:
 
 1. Sag ustteki **ayarlar** butonundan AI sunucusunu **Baslat** (header'daki isik yesile donecek)
-2. Editore metin yazin, toolbar'daki mavi **AI Iyilestir** butonuna tiklayin
+2. Editore metin yazin, toolbar'daki mavi **AI Iyilestir** veya "Toplu Tara" (Öneri Kartları oluştur) butonlarına tiklayin
 3. Yazim hatalari otomatik olarak kirmizi dalgali alt cizgi ile isaretlenir, sag tik ile oneri alin
-4. Gece/gunduz modu icin header'daki ay/gunes ikonuna tiklayin
+4. Gece/gunduz modu ve sayfa zoom özellikleri için header'daki ikonlara tıklayın
 
 ## Model Katalogu
 
@@ -119,7 +121,6 @@ Uygulama icinden dogrudan indirilebilir modeller:
 | **BitNet b1.58-2B-4T** | ~1.1 GB | 2 GB | Ingilizce | Ultra hizli, cok dusuk kaynak kullanimi |
 
 RAM yetersizligi durumunda uygulama otomatik olarak uyari gosterir ve daha kucuk model onerir.
-
 Katalog disi herhangi bir GGUF model dosyasini da ayarlar panelinden yol belirterek kullanabilirsiniz.
 
 ## Mimari
@@ -146,8 +147,8 @@ Katalog disi herhangi bir GGUF model dosyasini da ayarlar panelinden yol belirte
 +-------------------------------------------------+
 ```
 
-- **Backend (Go)**: LLM subprocess yonetimi, HTTP istemcisi (DUZELT etiketi + cleanLLMOutput), kelime bazli diff, akilli hata tespiti (RAM/model/port), ayar yonetimi, otomatik indirme, ilk acilis durum taramasi (CheckSetupStatus)
-- **Frontend (Svelte 5 + TypeScript)**: TipTap zengin metin editoru, editor ici inline track changes (ProseMirror Decoration), Notion tarzi review kartlari (hover-to-reveal), Setup Wizard (ilk acilis), hunspell-wasm Turkce yazim denetleyicisi, gece/gunduz modu, canli AI durum isigi, indirme ilerleme cubuklari, hata banner'lari
+- **Backend (Go)**: LLM subprocess yonetimi, HTTP istemcisi (DUZELT etiketi + cleanLLMOutput), cümle bazli diff (Git-history emülasyonu), akilli hata tespiti (RAM/model/port), ayar yonetimi, otomatik indirme, .kitap bundle derleyici.
+- **Frontend (Svelte 5 + TypeScript)**: TipTap zengin metin editoru, Notion tarzi review kartlari (hover-to-reveal), Setup Wizard (ilk acilis), hunspell-wasm Turkce yazim denetleyicisi, Toolbar öğreten Tooltip sistemi, asenkron Yorum blokları.
 - **Iletisim**: Wails binding sistemi (Go method'lari otomatik olarak JS fonksiyonlarina donusur)
 
 ## Proje Yapisi
@@ -156,7 +157,7 @@ Katalog disi herhangi bir GGUF model dosyasini da ayarlar panelinden yol belirte
 katip/
 +-- main.go                     # Uygulama giris noktasi
 +-- internal/
-|   +-- service/katip.go        # Ana API servisi (17 method)
+|   +-- service/katip.go        # Ana API servisi
 |   +-- llm/
 |   |   +-- client.go           # llama-server HTTP istemcisi + prompt yonetimi
 |   |   +-- manager.go          # llama-server surec yonetimi + hata analizi
@@ -164,17 +165,18 @@ katip/
 |   |   +-- models.go           # GGUF model katalogu (IsDefault, MinRAM) ve indirme
 |   |   +-- signal_unix.go      # Unix (macOS/Linux) SIGTERM graceful shutdown
 |   |   +-- signal_windows.go   # Windows process termination
-|   +-- diff/engine.go          # Metin fark hesaplama (karakter + kelime bazli)
+|   +-- diff/engine.go          # Metin fark hesaplama (karakter/kelime bazli track history)
 +-- frontend/
 |   +-- src/
 |       +-- App.svelte           # Ana bilesen + Setup Wizard + durum isigi + dark mode
 |       +-- app.css              # Tailwind tema (light/dark) + track changes + spell check stilleri
 |       +-- lib/
-|           +-- components/      # UI bilesenleri (Editor, Toolbar, ReviewCard, SetupWizard, SpellSuggestion, vb.)
+|           +-- components/      # UI bilesenleri (Editor, Toolbar, ReviewCard, SetupWizard vb.)
 |           +-- editor/          # ProseMirror diff plugin + spellcheck plugin + decorations
-|           +-- stores/          # Durum yonetimi (reviewStore)
+|           +-- stores/          # Durum yonetimi (reviewStore.svelte.ts zincirleri)
 |   +-- public/dictionaries/    # Turkce hunspell sozluk dosyalari (tr_TR.aff, tr_TR.dic)
-+-- project.md                   # Detayli mimari dokuman
++-- project.md                   # Detayli mimari kararlar ve epik yol haritası (Architecture)
++-- claude.md                    # AI asistan optimize kurallar paneli
 ```
 
 ## Veri Depolama
@@ -186,6 +188,8 @@ Tum veriler yerel sistemde, `os.UserConfigDir()` altinda saklanir:
 | Uygulama ayarlari | `%AppData%\Katip\config.json` | `~/Library/Application Support/Katip/config.json` | `~/.config/Katip/config.json` |
 | llama-server | `%AppData%\Katip\llama-server\` | `~/Library/Application Support/Katip/llama-server/` | `~/.config/Katip/llama-server/` |
 | GGUF modelleri | `%AppData%\Katip\models\` | `~/Library/Application Support/Katip/models/` | `~/.config/Katip/models/` |
+
+*(Not: Projeler tamamen .kitap uzantısıyla e-posta aktarımında lokal bilgisayarda birleştirilir).*
 
 ## Derleme
 
@@ -217,14 +221,10 @@ Calistirilabilir dosya `bin/` dizininde olusturulur.
 ## Teknolojiler
 
 - [Go](https://go.dev/) + [Wails v3](https://v3.wails.io/) -- masaustu uygulama catisi
-- [Svelte 5](https://svelte.dev/) + [TypeScript](https://www.typescriptlang.org/) -- frontend
+- [Svelte 5](https://svelte.dev/) + [TypeScript](https://www.typescriptlang.org/) -- frontend (Runes API)
 - [TipTap](https://tiptap.dev/) (ProseMirror) -- zengin metin editoru
 - [Tailwind CSS 4](https://tailwindcss.com/) -- stil
-- [llama.cpp](https://github.com/ggml-org/llama.cpp) -- yerel LLM inference (MIT lisans)
-- [go-diff](https://github.com/sergi/go-diff) -- metin karsilastirma
+- [llama.cpp](https://github.com/ggml-org/llama.cpp) -- yerel LLM inference motoru
+- [go-diff](https://github.com/sergi/go-diff) -- metin karsilastirma / geçmiş diff çekirdeği
 - [hunspell-wasm](https://www.npmjs.com/package/hunspell-wasm) -- WebAssembly tabanli yazim denetleyicisi
 - [tdd-ai/hunspell-tr](https://github.com/tdd-ai/hunspell-tr) -- Turkce hunspell sozlukleri
-
-## Lisans
-
-Bu proje gelistirme asamasindadir.

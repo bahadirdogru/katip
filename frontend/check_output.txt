@@ -1,0 +1,70 @@
+Loading svelte-check in workspace: c:\Git\katip\frontend
+Getting Svelte diagnostics...
+
+c:\Git\katip\frontend\[32msrc\lib\editor\diffDecorations.ts[39m:3:31
+[31mError[39m: Cannot find module '../stores/reviewStore' or its corresponding type declarations. 
+[36mimport { Decoration, DecorationSet } from '@tiptap/pm/view';
+import type { DiffItem } from [35m'../stores/reviewStore'[36m;[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\Editor.svelte[39m:15:31
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { ImproveParagraph } from '../../../bindings/katip/internal/service/katipservice.js';
+  import { reviewStore } from [35m'../stores/reviewStore.svelte.ts'[36m;
+  import { createDiffPlugin, diffPluginKey, buildDecorations } from '../editor/diffDecorations.ts';[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\Editor.svelte[39m:16:69
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { reviewStore } from '../stores/reviewStore.svelte.ts';
+  import { createDiffPlugin, diffPluginKey, buildDecorations } from [35m'../editor/diffDecorations.ts'[36m;
+  import { createSpellcheckPlugin, spellPluginKey } from '../editor/spellcheckPlugin.ts';[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\Editor.svelte[39m:17:58
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { createDiffPlugin, diffPluginKey, buildDecorations } from '../editor/diffDecorations.ts';
+  import { createSpellcheckPlugin, spellPluginKey } from [35m'../editor/spellcheckPlugin.ts'[36m;
+  import { initSpellChecker, isReady as isSpellReady } from '../editor/spellChecker.ts';[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\Editor.svelte[39m:18:61
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { createSpellcheckPlugin, spellPluginKey } from '../editor/spellcheckPlugin.ts';
+  import { initSpellChecker, isReady as isSpellReady } from [35m'../editor/spellChecker.ts'[36m;
+  import SpellSuggestion from './SpellSuggestion.svelte';[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\Toolbar.svelte[39m:4:31
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { ImproveParagraph } from '../../../bindings/katip/internal/service/katipservice.js';
+  import { reviewStore } from [35m'../stores/reviewStore.svelte.ts'[36m;
+  import { buildDecorations, diffPluginKey } from '../editor/diffDecorations.ts';[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\Toolbar.svelte[39m:5:51
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { reviewStore } from '../stores/reviewStore.svelte.ts';
+  import { buildDecorations, diffPluginKey } from [35m'../editor/diffDecorations.ts'[36m;[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\Toolbar.svelte[39m:129:44
+[31mError[39m: Property 'toggleTaskList' does not exist on type 'ChainedCommands'. Did you mean 'toggleList'? (ts)
+[36m      icon: 'Ôİæ Task',
+      action: () => editor.chain().focus().[35mtoggleTaskList[36m().run(),
+      isActive: () => editor.isActive('taskList'),[39m
+
+c:\Git\katip\frontend\[32msrc\lib\components\ReviewPanel.svelte[39m:3:31
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import type { Editor } from '@tiptap/core';
+  import { reviewStore } from [35m'../stores/reviewStore.svelte.ts'[36m;
+  import ReviewCard from './ReviewCard.svelte';[39m
+
+c:\Git\katip\frontend\[32msrc\App.svelte[39m:9:31
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { CheckSetupStatus, GetLLMStatus } from '../bindings/katip/internal/service/katipservice.js';
+  import { reviewStore } from [35m'./lib/stores/reviewStore.svelte.ts'[36m;
+  import { diffPluginKey } from './lib/editor/diffDecorations.ts';[39m
+
+c:\Git\katip\frontend\[32msrc\App.svelte[39m:10:33
+[31mError[39m: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled. (ts)
+[36m  import { reviewStore } from './lib/stores/reviewStore.svelte.ts';
+  import { diffPluginKey } from [35m'./lib/editor/diffDecorations.ts'[36m;
+  import type { Editor as TipTapEditor } from '@tiptap/core';[39m
+
+====================================
+[31msvelte-check found 11 errors and 0 warnings in 5 files
+[39m

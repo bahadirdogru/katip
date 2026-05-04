@@ -151,6 +151,56 @@ func cleanLLMOutput(raw string) string {
 	return strings.TrimSpace(s)
 }
 
+func (c *Client) GenerateSummary(text string) (string, error) {
+	sysPrompt := "Sen bir analiz ve metin özetleme motorusun. Yalnızca istenen özeti oluşturmalısın. Sohbet BAŞLATMA."
+	userMsg := "Lütfen aşağıdaki metni dikkatlice oku ve yazarın daha sonra referans alması için 1-2 paragraflık bir olay örgüsü (plot summary) çıkart. Karakterleri ve mekanı tanıt.\nSADECE ÖZETİ YAZ.\n\nMETİN:\n" + text
+
+	reqBody := chatRequest{
+		Model: "local",
+		Messages: []chatMessage{
+			{Role: "system", Content: sysPrompt},
+			{Role: "user", Content: userMsg},
+		},
+		Temperature: 0.3,
+		TopP:        0.9,
+	}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("istek oluşturulamadı: %w", err)
+	}
+
+	resp, err := c.httpClient.Post(
+		c.endpoint+"/v1/chat/completions",
+		"application/json",
+		bytes.NewBuffer(jsonData),
+	)
+	if err != nil {
+		return "", fmt.Errorf("llama-server'a bağlanılamadı: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("yanıt okunamadı: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("llama-server hatası (HTTP %d): %s", resp.StatusCode, string(body))
+	}
+
+	var chatResp chatResponse
+	if err := json.Unmarshal(body, &chatResp); err != nil {
+		return "", fmt.Errorf("yanıt ayrıştırılamadı: %w", err)
+	}
+
+	if len(chatResp.Choices) == 0 {
+		return "", fmt.Errorf("llama-server boş yanıt döndü")
+	}
+
+	return strings.TrimSpace(chatResp.Choices[0].Message.Content), nil
+}
+
 func (c *Client) IsHealthy() bool {
 	resp, err := c.httpClient.Get(c.endpoint + "/health")
 	if err != nil {
