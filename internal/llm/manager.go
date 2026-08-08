@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"katip/internal/hardware"
 )
 
 type Manager struct {
@@ -33,14 +35,17 @@ type ServerConfig struct {
 	Port       int
 	CtxSize    int
 	Threads    int
+	GPULayers  int
 }
 
 func DefaultConfig() ServerConfig {
+	threads := hardware.OptimalThreads(hardware.GetProfile())
 	return ServerConfig{
-		Host:    "127.0.0.1",
-		Port:    8089,
-		CtxSize: 4096,
-		Threads: 4,
+		Host:      "127.0.0.1",
+		Port:      8089,
+		CtxSize:   4096,
+		Threads:   threads,
+		GPULayers: -1,
 	}
 }
 
@@ -68,6 +73,13 @@ func (m *Manager) Start(cfg ServerConfig) error {
 		"--port", fmt.Sprintf("%d", cfg.Port),
 		"-c", fmt.Sprintf("%d", cfg.CtxSize),
 		"-t", fmt.Sprintf("%d", cfg.Threads),
+	}
+	if cfg.GPULayers != 0 {
+		ngl := cfg.GPULayers
+		if ngl < 0 {
+			ngl = 999
+		}
+		args = append(args, "-ngl", fmt.Sprintf("%d", ngl))
 	}
 
 	m.cmd = exec.Command(cfg.BinaryPath, args...)

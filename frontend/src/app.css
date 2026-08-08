@@ -175,6 +175,128 @@ body.dark {
   background-color: var(--color-accent-gray);
 }
 
+.review-card-accent-warning {
+  background-color: #dc2626;
+}
+
+.review-card-accent-style {
+  background-color: #f59e0b;
+}
+
+.review-diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.review-diff-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.review-diff-row:hover {
+  background: var(--color-surface-secondary);
+}
+
+.review-diff-row-accepted {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: rgba(22, 163, 74, 0.06);
+}
+
+.review-diff-row-rejected {
+  border-color: var(--color-border);
+  background: var(--color-surface-secondary);
+  opacity: 0.65;
+}
+
+.review-diff-row-num {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  border-radius: 4px;
+}
+
+.review-diff-row-body {
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.review-diff-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.review-diff-change {
+  display: inline;
+  white-space: normal;
+}
+
+.review-diff-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  margin-right: 2px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.review-diff-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  opacity: 1;
+  transition: background-color 120ms ease, color 120ms ease;
+  flex-shrink: 0;
+}
+
+.review-diff-btn-accept:hover {
+  color: #16a34a;
+  background-color: rgba(22, 163, 74, 0.15);
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+.review-diff-btn-reject:hover {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.review-highlight-pulse {
+  animation: reviewPulse 1.5s ease;
+}
+
+@keyframes reviewPulse {
+  0%, 100% { background-color: transparent; }
+  30% { background-color: rgba(37, 99, 235, 0.12); }
+}
+
+
 .review-card-actions {
   opacity: 0;
   transition: opacity 150ms ease;

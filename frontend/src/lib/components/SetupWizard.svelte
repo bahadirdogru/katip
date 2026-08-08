@@ -15,6 +15,9 @@
     defaultModelName: string;
     defaultModelSize: string;
     defaultModelID: string;
+    hardwareSummary?: string;
+    recommendedBackend?: string;
+    hasGPU?: boolean;
   }
 
   interface Props {
@@ -176,10 +179,21 @@
     {#if currentStep === 'welcome'}
       <div class="text-center">
         <h1 class="text-2xl font-bold text-text-primary mb-2">Katip'e Hoş Geldiniz</h1>
-        <p class="text-sm text-text-secondary mb-8 leading-relaxed">
+        <p class="text-sm text-text-secondary mb-4 leading-relaxed">
           Katip, AI destekli Türkçe metin düzeltme aracıdır.
           Başlamak için birkaç bileşenin kurulması gerekiyor.
         </p>
+
+        {#if setupInfo.hardwareSummary}
+          <div class="text-left bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-medium text-blue-800 mb-1">Cihazınız</p>
+            <p class="text-xs text-blue-700">{setupInfo.hardwareSummary}</p>
+            {#if setupInfo.recommendedBackend}
+              <p class="text-[10px] text-blue-600 mt-1">Önerilen backend: {setupInfo.recommendedBackend.toUpperCase()}</p>
+            {/if}
+            <p class="text-[10px] text-blue-600 mt-1">Önerilen model: {setupInfo.defaultModelName} ({setupInfo.defaultModelSize})</p>
+          </div>
+        {/if}
 
         <div class="text-left bg-surface-secondary rounded-lg p-4 mb-8 space-y-2.5">
           <div class="flex items-center gap-3">

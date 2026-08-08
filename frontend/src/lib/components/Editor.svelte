@@ -19,31 +19,34 @@
   import Color from '@tiptap/extension-color';
   import TextStyle from '@tiptap/extension-text-style';
   import CharacterCount from '@tiptap/extension-character-count';
-  import { ImproveParagraph } from '../../../bindings/katip/internal/service/katipservice.js';
-  import { reviewStore } from '../stores/reviewStore.svelte.ts';
   import { documentStore } from '../stores/documentStore.svelte.ts';
-  import { createDiffPlugin, diffPluginKey, buildDecorations } from '../editor/diffDecorations.ts';
+  import { createDiffPlugin } from '../editor/diffDecorations.ts';
   import { createSpellcheckPlugin, spellPluginKey } from '../editor/spellcheckPlugin.ts';
-  import { initSpellChecker, isReady as isSpellReady } from '../editor/spellChecker.ts';
+  import { initSpellChecker } from '../editor/spellChecker.ts';
   import { CommentMark } from '../editor/commentMark.ts';
   import SpellSuggestion from './SpellSuggestion.svelte';
+  import type { LLMState } from '../editor/aiReviewService.ts';
+  import { requestImprovement } from '../editor/aiReviewService.ts';
 
   interface Props {
     onReady?: (editor: Editor) => void;
+    llmState?: LLMState;
   }
 
-  let { onReady }: Props = $props();
+  let { onReady, llmState = 'off' }: Props = $props();
 
   let element: HTMLDivElement | undefined = $state();
   let editor: Editor | undefined = $state();
   let hoverButtonEl: HTMLDivElement | undefined = $state();
-  let hoverParagraph: { node: Element; pos: number; text: string } | null = $state(null);
+  let hoverParagraph: { node: Element; pos: number; text: string; paragraphPos: number } | null = $state(null);
   let isProcessing = $state(false);
 
   let spellPopup: { word: string; x: number; y: number; from: number; to: number } | null = $state(null);
 
+  let aiReady = $derived(llmState === 'ready');
+
   function showAIButton(event: MouseEvent) {
-    if (!editor || !hoverButtonEl || isProcessing) return;
+    if (!editor || !hoverButtonEl || isProcessing || !aiReady) return;
 
     const target = event.target as HTMLElement;
     const paragraph = target.closest('.ProseMirror p, .ProseMirror h1, .ProseMirror h2, .ProseMirror h3');
@@ -60,62 +63,25 @@
 
     const view = editor.view;
     const pos = view.posAtDOM(paragraph, 0);
-    hoverParagraph = { node: paragraph, pos, text };
+    const resolved = view.state.doc.resolve(pos);
+    const paragraphPos = resolved.before(resolved.depth);
+    hoverParagraph = { node: paragraph, pos, text, paragraphPos };
   }
 
   async function handleImprove() {
-    if (!hoverParagraph || !editor || isProcessing) return;
+    if (!hoverParagraph || !editor || isProcessing || !aiReady) return;
 
     isProcessing = true;
-    const paragraphId = `p-${hoverParagraph.pos}`;
-    const originalText = hoverParagraph.text;
-
     try {
-      const result = await ImproveParagraph(paragraphId, originalText, documentStore.plotSummary);
-      if (result && result.diffs && result.diffs.length > 0) {
-        const hasChanges = result.diffs.some((d: any) => d.type !== 'equal');
-        if (hasChanges) {
-          const mappedDiffs = result.diffs.map((d: any) => ({
-            type: d.type as 'equal' | 'insert' | 'delete',
-            text: d.text,
-          }));
-
-          reviewStore.addReview({
-            paragraphId: result.paragraphId,
-            summary: result.summary,
-            original: result.original,
-            improved: result.improved,
-            diffs: mappedDiffs,
-          });
-
-          applyDiffDecorations(originalText, mappedDiffs);
-        }
-      }
-    } catch (err) {
-      console.error('AI iyileştirme hatası:', err);
+      const { state } = editor.view;
+      const tr = state.tr.setSelection(
+        (editor.state as any).selection.constructor.near(state.doc.resolve(hoverParagraph.paragraphPos + 1))
+      );
+      editor.view.dispatch(tr);
+      await requestImprovement(editor, { scope: 'paragraph', llmState });
     } finally {
       isProcessing = false;
     }
-  }
-
-  function applyDiffDecorations(originalText: string, diffs: Array<{type: 'equal'|'insert'|'delete', text: string}>) {
-    if (!editor) return;
-    const { state } = editor.view;
-    let paragraphFrom: number | null = null;
-
-    state.doc.descendants((node, pos) => {
-      if (paragraphFrom !== null) return false;
-      if (node.isTextblock && node.textContent === originalText) {
-        paragraphFrom = pos + 1;
-        return false;
-      }
-    });
-
-    if (paragraphFrom === null) return;
-
-    const decorations = buildDecorations(state.doc, paragraphFrom, diffs);
-    const tr = state.tr.setMeta(diffPluginKey, { decorations });
-    editor.view.dispatch(tr);
   }
 
   function handleContextMenu(event: MouseEvent) {
@@ -190,22 +156,13 @@
       element,
       extensions: [
         StarterKit,
-        Placeholder.configure({
-          placeholder: 'Yazmaya başlayın...',
-        }),
+        Placeholder.configure({ placeholder: 'Yazmaya başlayın...' }),
         Underline,
-        TextAlign.configure({
-          types: ['heading', 'paragraph'],
-        }),
+        TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Highlight,
         TaskList,
-        TaskItem.configure({
-          nested: true,
-        }),
-        Link.configure({
-          openOnClick: false,
-          autolink: true,
-        }),
+        TaskItem.configure({ nested: true }),
+        Link.configure({ openOnClick: false, autolink: true }),
         Subscript,
         Superscript,
         CommentMark,
@@ -221,8 +178,8 @@
       content: `
         <h2>Katip'e Hoş Geldiniz</h2>
         <p>Bu bir profesyonel Türkçe metin düzenleyicisidir. Paragraflarınızı AI ile iyileştirebilirsiniz.</p>
-        <p>Herhangi bir paragrafın üzerine gelin ve sağda beliren "AI İyileştir" butonuna tıklayın. AI, paragrafınızı analiz edecek ve düzeltme önerilerini sağ panelde gösterecektir.</p>
-        <p>Önerileri onaylayabilir veya reddedebilirsiniz. Onaylanan değişiklikler metne uygulanır, reddedilen değişiklikler geri alınır.</p>
+        <p>Herhangi bir paragrafın üzerine gelin ve "İyileştir" butonuna tıklayın. AI, paragrafınızı analiz edecek ve düzeltme önerilerini sağ panelde gösterecektir.</p>
+        <p>Önerileri onaylayabilir veya reddedebilirsiniz. Verileriniz cihazınızdan çıkmaz.</p>
       `,
       editorProps: {
         attributes: {
@@ -266,7 +223,7 @@
     oncontextmenu={handleContextMenu}
   ></div>
 
-  {#if hoverParagraph && !isProcessing}
+  {#if hoverParagraph && !isProcessing && aiReady}
     {@const editorRect = element?.getBoundingClientRect()}
     {@const nodeRect = hoverParagraph.node.getBoundingClientRect()}
     {#if editorRect && nodeRect}
@@ -279,9 +236,7 @@
           class="px-1.5 py-0.5 text-[11px] rounded text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors"
           onclick={handleImprove}
           title="AI ile iyileştir"
-        >
-          İyileştir
-        </button>
+        >İyileştir</button>
       </div>
     {/if}
   {/if}
@@ -302,6 +257,18 @@
       y={spellPopup.y}
       onReplace={handleSpellReplace}
       onClose={handleSpellClose}
+      onAIImprove={aiReady ? async () => {
+        if (!editor) return;
+        const { from, to } = spellPopup!;
+        editor.chain().focus().setTextSelection({ from, to }).run();
+        isProcessing = true;
+        spellPopup = null;
+        try {
+          await requestImprovement(editor, { scope: 'selection', llmState });
+        } finally {
+          isProcessing = false;
+        }
+      } : undefined}
     />
   {/if}
 </div>

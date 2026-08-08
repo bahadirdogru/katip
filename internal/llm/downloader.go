@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"katip/internal/hardware"
 )
 
 const (
@@ -69,29 +71,71 @@ func FindExistingZip() string {
 	return ""
 }
 
-func findAssetName() string {
-	os := runtime.GOOS
+func findAssetName(backend string) string {
+	osName := runtime.GOOS
 	arch := runtime.GOARCH
 
+	switch backend {
+	case "cuda":
+		switch {
+		case osName == "windows" && arch == "amd64":
+			return "win-cuda-x64"
+		case osName == "linux" && arch == "amd64":
+			return "ubuntu-cuda-x64"
+		}
+	case "vulkan":
+		switch {
+		case osName == "windows" && arch == "amd64":
+			return "win-vulkan-x64"
+		case osName == "linux" && arch == "amd64":
+			return "ubuntu-vulkan-x64"
+		}
+	case "metal":
+		if osName == "darwin" && arch == "arm64" {
+			return "mac-arm64"
+		}
+	}
+
+	// CPU fallback
 	switch {
-	case os == "windows" && arch == "amd64":
+	case osName == "windows" && arch == "amd64":
 		return "win-cpu-x64"
-	case os == "windows" && arch == "arm64":
+	case osName == "windows" && arch == "arm64":
 		return "win-cpu-arm64"
-	case os == "darwin" && arch == "arm64":
+	case osName == "darwin" && arch == "arm64":
 		return "mac-arm64"
-	case os == "darwin" && arch == "amd64":
+	case osName == "darwin" && arch == "amd64":
 		return "mac-x64"
-	case os == "linux" && arch == "amd64":
+	case osName == "linux" && arch == "amd64":
 		return "ubuntu-x64"
-	case os == "linux" && arch == "arm64":
+	case osName == "linux" && arch == "arm64":
 		return "ubuntu-arm64"
 	default:
 		return "win-cpu-x64"
 	}
 }
 
+func ResolveBackend(preferred string) string {
+	if preferred != "" && preferred != "auto" {
+		return preferred
+	}
+	profile := hardware.GetProfile()
+	if profile.HasGPUAcceleration {
+		return profile.RecommendedBackend
+	}
+	return "cpu"
+}
+
+func DownloadLlamaServerWithBackend(backend string, progressCb func(DownloadProgress)) error {
+	return downloadLlamaServer(backend, progressCb)
+}
+
 func DownloadLlamaServer(progressCb func(DownloadProgress)) error {
+	backend := ResolveBackend("auto")
+	return downloadLlamaServer(backend, progressCb)
+}
+
+func downloadLlamaServer(backend string, progressCb func(DownloadProgress)) error {
 	report := func(p DownloadProgress) {
 		if progressCb != nil {
 			progressCb(p)
@@ -115,17 +159,27 @@ func DownloadLlamaServer(progressCb func(DownloadProgress)) error {
 		return fmt.Errorf("sürüm bilgisi okunamadı: %w", err)
 	}
 
-	pattern := findAssetName()
+	pattern := findAssetName(backend)
 	var targetAsset *githubAsset
 	for i, asset := range release.Assets {
-		if strings.Contains(asset.Name, pattern) &&
-			!strings.Contains(asset.Name, "cuda") &&
-			!strings.Contains(asset.Name, "vulkan") &&
-			!strings.Contains(asset.Name, "sycl") &&
-			!strings.Contains(asset.Name, "hip") {
-			targetAsset = &release.Assets[i]
-			break
+		if !strings.Contains(asset.Name, pattern) {
+			continue
 		}
+		// CPU build: exclude GPU variants
+		if backend == "cpu" || backend == "" {
+			if strings.Contains(asset.Name, "cuda") ||
+				strings.Contains(asset.Name, "vulkan") ||
+				strings.Contains(asset.Name, "sycl") ||
+				strings.Contains(asset.Name, "hip") {
+				continue
+			}
+		}
+		targetAsset = &release.Assets[i]
+		break
+	}
+	if targetAsset == nil && backend != "cpu" {
+		slog.Warn("GPU binary bulunamadı, CPU fallback deneniyor", "backend", backend, "pattern", pattern)
+		return downloadLlamaServer("cpu", progressCb)
 	}
 	if targetAsset == nil {
 		return fmt.Errorf("platformunuz için uygun binary bulunamadı (%s)", pattern)

@@ -7,9 +7,10 @@
     y: number;
     onReplace: (newWord: string) => void;
     onClose: () => void;
+    onAIImprove?: () => void;
   }
 
-  let { word, x, y, onReplace, onClose }: Props = $props();
+  let { word, x, y, onReplace, onClose, onAIImprove }: Props = $props();
 
   let suggestions = $derived(getSuggestions(word, 5));
 
@@ -52,6 +53,14 @@
   >
     Sözlüğe ekle
   </button>
+  {#if onAIImprove}
+    <button
+      class="spell-popup-item spell-popup-action text-primary"
+      onclick={onAIImprove}
+    >
+      ✨ AI ile düzelt
+    </button>
+  {/if}
   <button
     class="spell-popup-item spell-popup-action"
     onclick={onClose}

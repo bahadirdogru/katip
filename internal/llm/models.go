@@ -10,16 +10,20 @@ import (
 )
 
 type ModelInfo struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	SizeLabel   string `json:"sizeLabel"`
-	SizeBytes   int64  `json:"sizeBytes"`
-	Filename    string `json:"filename"`
-	URL         string `json:"url"`
-	Language    string `json:"language"`
-	MinRAM      string `json:"minRAM"`
-	IsDefault   bool   `json:"isDefault"`
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	SizeLabel        string `json:"sizeLabel"`
+	SizeBytes        int64  `json:"sizeBytes"`
+	Filename         string `json:"filename"`
+	URL              string `json:"url"`
+	Language         string `json:"language"`
+	MinRAM           string `json:"minRAM"`
+	IsDefault        bool   `json:"isDefault"`
+	FitStatus        string `json:"fitStatus,omitempty"`
+	RecommendedQuant string `json:"recommendedQuant,omitempty"`
+	QuantTier        string `json:"quantTier,omitempty"`
+	FamilyID         string `json:"familyId,omitempty"`
 }
 
 var ModelCatalog = []ModelInfo{
@@ -34,6 +38,8 @@ var ModelCatalog = []ModelInfo{
 		Language:    "Türkçe",
 		MinRAM:      "8 GB",
 		IsDefault:   true,
+		QuantTier:   "balanced",
+		FamilyID:    "turkcell-7b",
 	},
 	{
 		ID:          "openr1-qwen-7b-tr-q4km",
@@ -45,6 +51,8 @@ var ModelCatalog = []ModelInfo{
 		URL:         "https://huggingface.co/mradermacher/OpenR1-Qwen-7B-Turkish-GGUF/resolve/main/OpenR1-Qwen-7B-Turkish.Q4_K_M.gguf",
 		Language:    "Türkçe",
 		MinRAM:      "8 GB",
+		QuantTier:   "balanced",
+		FamilyID:    "openr1-qwen-7b",
 	},
 	{
 		ID:          "qwen25-3b-q4km",
@@ -56,6 +64,8 @@ var ModelCatalog = []ModelInfo{
 		URL:         "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf",
 		Language:    "Çok dilli",
 		MinRAM:      "4 GB",
+		QuantTier:   "small",
+		FamilyID:    "qwen25-3b",
 	},
 	{
 		ID:          "bitnet-2b-4t",
@@ -67,6 +77,8 @@ var ModelCatalog = []ModelInfo{
 		URL:         "https://huggingface.co/microsoft/bitnet-b1.58-2B-4T-gguf/resolve/main/ggml-model-i2_s.gguf",
 		Language:    "İngilizce",
 		MinRAM:      "2 GB",
+		QuantTier:   "small",
+		FamilyID:    "bitnet-2b",
 	},
 }
 

@@ -5,17 +5,24 @@
   import ReviewPanel from './lib/components/ReviewPanel.svelte';
   import SettingsDialog from './lib/components/SettingsDialog.svelte';
   import SetupWizard from './lib/components/SetupWizard.svelte';
-  import { CheckSetupStatus, GetLLMStatus } from '../bindings/katip/internal/service/katipservice.js';
+  import Toast from './lib/components/Toast.svelte';
+  import { CheckSetupStatus, GetLLMStatus, GetConfig, StartLLMServer, GetSystemMonitor } from '../bindings/katip/internal/service/katipservice.js';
   import { reviewStore } from './lib/stores/reviewStore.svelte.ts';
   import { settingsStore } from './lib/stores/settingsStore.svelte.ts';
   import { commentStore } from './lib/stores/commentStore.svelte.ts';
-  import { diffPluginKey } from './lib/editor/diffDecorations.ts';
   import CommentPanel from './lib/components/CommentPanel.svelte';
   import SummaryPanel from './lib/components/SummaryPanel.svelte';
   import type { Editor as TipTapEditor } from '@tiptap/core';
+  import {
+    acceptReview,
+    rejectReview,
+    scrollToReview,
+    updateGranularDecorations,
+    requestImprovement,
+  } from './lib/editor/aiReviewService.ts';
 
   let editor: TipTapEditor | null = $state(null);
-  
+
   type RightPanelTab = 'reviews' | 'comments' | 'summary' | 'closed';
   let activePanel = $state<RightPanelTab>('reviews');
 
@@ -31,6 +38,17 @@
 
   let dark = $state(false);
 
+  let systemMonitor = $state<{
+    totalRAMBytes: number;
+    availableRAMBytes: number;
+    usedRAMBytes: number;
+    cpuCores: number;
+    llmRunning: boolean;
+    llmHealthy: boolean;
+  } | null>(null);
+  let monitorTimer: ReturnType<typeof setInterval> | null = null;
+  let autoStartAttempted = $state(false);
+
   function applyTheme(isDark: boolean) {
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('katip-theme', isDark ? 'dark' : 'light');
@@ -39,6 +57,43 @@
   function toggleTheme() {
     dark = !dark;
     applyTheme(dark);
+  }
+
+  async function pollSystemMonitor() {
+    try {
+      systemMonitor = await GetSystemMonitor() as any;
+    } catch {
+      systemMonitor = null;
+    }
+  }
+
+  async function tryAutoStartLLM() {
+    if (autoStartAttempted) return;
+    autoStartAttempted = true;
+    try {
+      const setup = await CheckSetupStatus() as any;
+      if (setup?.status !== 'ready') return;
+      const cfg = await GetConfig() as any;
+      if (cfg?.autoStartLLM === false) return;
+      const status = await GetLLMStatus() as any;
+      if (status?.healthy || status?.running) return;
+      await StartLLMServer();
+      llmState = 'loading';
+    } catch {
+      /* kullanıcı ayarlardan başlatabilir */
+    }
+  }
+
+  function formatMonitorBytes(bytes: number): string {
+    if (!bytes) return '—';
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1) return gb.toFixed(1) + ' GB';
+    return Math.round(bytes / (1024 * 1024)) + ' MB';
+  }
+
+  function ramUsagePercent(): number {
+    if (!systemMonitor?.totalRAMBytes) return 0;
+    return Math.round((systemMonitor.usedRAMBytes / systemMonitor.totalRAMBytes) * 100);
   }
 
   async function pollLLMStatus() {
@@ -56,6 +111,36 @@
     }
   }
 
+  function handleKeydown(e: KeyboardEvent) {
+    if (!editor) return;
+    const ctrl = e.ctrlKey || e.metaKey;
+
+    if (ctrl && e.shiftKey && e.key === 'I') {
+      e.preventDefault();
+      requestImprovement(editor, { scope: 'paragraph', llmState });
+    } else if (ctrl && e.key === 'Enter') {
+      const active = reviewStore.activeReviewId;
+      if (active) {
+        e.preventDefault();
+        handleAccept(active);
+      }
+    } else if (e.key === 'Escape') {
+      const active = reviewStore.activeReviewId;
+      if (active) {
+        e.preventDefault();
+        handleReject(active);
+      }
+    } else if (ctrl && e.shiftKey && e.key === ']') {
+      e.preventDefault();
+      const next = reviewStore.nextPending;
+      if (next) scrollToReview(editor, next.id);
+    } else if (ctrl && e.shiftKey && e.key === '[') {
+      e.preventDefault();
+      const prev = reviewStore.prevPending;
+      if (prev) scrollToReview(editor, prev.id);
+    }
+  }
+
   onMount(async () => {
     const saved = localStorage.getItem('katip-theme');
     dark = saved === 'dark';
@@ -70,16 +155,24 @@
     loading = false;
 
     pollLLMStatus();
+    pollSystemMonitor();
     statusPollTimer = setInterval(pollLLMStatus, 5000);
+    monitorTimer = setInterval(pollSystemMonitor, 3000);
+
+    if (setupInfo?.status === 'ready' || wizardSkipped) {
+      tryAutoStartLLM();
+    }
   });
 
   onDestroy(() => {
     if (statusPollTimer) clearInterval(statusPollTimer);
+    if (monitorTimer) clearInterval(monitorTimer);
   });
 
   async function handleSetupComplete() {
     wizardSkipped = false;
     setupInfo = await CheckSetupStatus();
+    tryAutoStartLLM();
   }
 
   function handleSetupSkip() {
@@ -90,45 +183,28 @@
     editor = e;
   }
 
-  function clearDecorations() {
-    if (!editor) return;
-    const tr = editor.view.state.tr.setMeta(diffPluginKey, { clear: true });
-    editor.view.dispatch(tr);
-  }
-
   function handleAccept(reviewId: string) {
-    const review = reviewStore.reviews.find(r => r.id === reviewId);
-    if (review && editor) {
-      clearDecorations();
-
-      const { state, dispatch } = editor.view;
-      let found = false;
-
-      state.doc.descendants((node, pos) => {
-        if (found) return false;
-        if (node.isTextblock && node.textContent === review.original) {
-          const tr = state.tr.replaceWith(
-            pos + 1,
-            pos + node.nodeSize - 1,
-            state.schema.text(review.improved)
-          );
-          dispatch(tr);
-          found = true;
-          return false;
-        }
-      });
-
-      reviewStore.acceptReview(reviewId);
-    }
+    if (editor) acceptReview(editor, reviewId);
   }
 
   function handleReject(reviewId: string) {
-    clearDecorations();
-    reviewStore.rejectReview(reviewId);
+    if (editor) rejectReview(editor, reviewId);
+  }
+
+  function handleAcceptDiff(reviewId: string, diffIndex: number) {
+    reviewStore.acceptDiffItem(reviewId, diffIndex);
+    if (editor) updateGranularDecorations(editor, reviewId);
+  }
+
+  function handleRejectDiff(reviewId: string, diffIndex: number) {
+    reviewStore.rejectDiffItem(reviewId, diffIndex);
+    if (editor) updateGranularDecorations(editor, reviewId);
   }
 
   let hasReviews = $derived(reviewStore.reviews.length > 0);
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 {#if loading}
   <div class="flex items-center justify-center h-screen w-screen bg-surface">
@@ -200,19 +276,25 @@
     </header>
 
     {#if editor}
-      <Toolbar {editor} />
+      <Toolbar {editor} {llmState} />
     {/if}
 
     <div class="flex flex-1 overflow-hidden">
       <main class="flex-1 overflow-y-auto bg-surface" style="font-size: {settingsStore.fontSize}px; font-family: {settingsStore.fontFamily};">
         <div class="max-w-3xl mx-auto px-20 py-8 editor-root min-h-full">
-          <Editor onReady={handleEditorReady} />
+          <Editor onReady={handleEditorReady} {llmState} />
         </div>
       </main>
 
       {#if editor && activePanel === 'reviews'}
         <aside class="w-72 border-l border-border bg-surface overflow-y-auto shrink-0">
-          <ReviewPanel {editor} onAccept={handleAccept} onReject={handleReject} />
+          <ReviewPanel
+            {editor}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            onAcceptDiff={handleAcceptDiff}
+            onRejectDiff={handleRejectDiff}
+          />
         </aside>
       {:else if editor && activePanel === 'comments'}
         <aside class="w-72 border-l border-border bg-surface overflow-hidden shrink-0">
@@ -220,17 +302,24 @@
         </aside>
       {:else if editor && activePanel === 'summary'}
         <aside class="w-72 border-l border-border bg-surface overflow-hidden shrink-0">
-          <SummaryPanel {editor} />
+          <SummaryPanel {editor} {llmState} />
         </aside>
       {/if}
     </div>
 
-    <!-- Kelime / Karakter Sayacı Çubuğu (Footer) -->
     <footer class="flex items-center justify-between px-4 py-1.5 border-t border-border bg-surface text-[10px] text-text-secondary shrink-0 z-10">
       <div class="flex items-center gap-4">
         {#if editor}
           <span class="font-medium tracking-wide">{editor.storage.characterCount.words()} kelime</span>
           <span class="opacity-75">{editor.storage.characterCount.characters()} karakter</span>
+        {/if}
+        {#if systemMonitor}
+          <span class="opacity-75 hidden sm:inline" title="RAM kullanımı">
+            RAM {ramUsagePercent()}% ({formatMonitorBytes(systemMonitor.availableRAMBytes)} boş)
+          </span>
+          {#if systemMonitor.llmRunning}
+            <span class="text-amber-600">AI aktif</span>
+          {/if}
         {/if}
       </div>
       <div>Katip Yazım Motoru v0.0.1</div>
@@ -238,4 +327,5 @@
   </div>
 
   <SettingsDialog open={showSettings} onClose={() => showSettings = false} />
+  <Toast />
 {/if}

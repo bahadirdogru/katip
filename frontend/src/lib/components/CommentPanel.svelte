@@ -35,6 +35,11 @@
     }
   }
 
+  function quoteText(str: string) {
+    if (str.length > 60) return str.substring(0, 60) + '...';
+    return str;
+  }
+
   let visibleThreads = $derived(commentStore.threads.filter(t => !t.resolved));
 </script>
 
@@ -65,7 +70,7 @@
         <div class="p-3">
           <!-- Quote -->
           <div class="pl-2 border-l-2 border-primary/40 mb-3 text-[11px] text-text-secondary italic line-clamp-3">
-            "{MwQuoteText(thread.quote)}"
+            "{quoteText(thread.quote)}"
           </div>
 
           <!-- Replies -->
@@ -119,10 +124,3 @@
     {/each}
   </div>
 </div>
-
-<script module>
-  function MwQuoteText(str: string) {
-    if(str.length > 60) return str.substring(0, 60) + '...';
-    return str;
-  }
-</script>
